@@ -10,12 +10,14 @@ public class PaymentService : IPaymentService
     private readonly AppDbContext _db;
     private readonly IS3Service _s3;
     private readonly IOpenPlayService _openPlay;
+    private readonly ITrustScoreService _trust;
 
-    public PaymentService(AppDbContext db, IS3Service s3, IOpenPlayService openPlay)
+    public PaymentService(AppDbContext db, IS3Service s3, IOpenPlayService openPlay, ITrustScoreService trust)
     {
         _db = db;
         _s3 = s3;
         _openPlay = openPlay;
+        _trust = trust;
     }
 
     public async Task<PaymentDto> SubmitProofAsync(Guid bookingId, Guid userId, Stream proofStream, string contentType, string? gcashReference, CancellationToken ct = default)
@@ -88,6 +90,15 @@ public class PaymentService : IPaymentService
 
         await _db.SaveChangesAsync(ct);
 
+        await _trust.AdjustAsync(
+            payment.Booking.BookedByUserId,
+            TrustAdjustmentReason.BookingApproved,
+            1f,
+            "Payment approved",
+            payment.BookingId,
+            reviewerUserId,
+            ct);
+
         if (payment.Booking.Type == BookingType.OpenPlaySeat)
             await _openPlay.OnSeatPaymentApprovedAsync(payment.BookingId, ct);
 
@@ -112,6 +123,16 @@ public class PaymentService : IPaymentService
         payment.Booking.Status = BookingStatus.Rejected;
 
         await _db.SaveChangesAsync(ct);
+
+        await _trust.AdjustAsync(
+            payment.Booking.BookedByUserId,
+            TrustAdjustmentReason.PaymentRejected,
+            -5f,
+            $"Payment rejected: {reason}",
+            payment.BookingId,
+            reviewerUserId,
+            ct);
+
         return await BuildDtoAsync(payment, ct);
     }
 

@@ -9,4 +9,5 @@ public record UserDto(
     string Role,
     bool IsBanned,
     DateTime? BannedAt,
-    DateTime CreationTime);
+    DateTime CreationTime,
+    float TrustScore);

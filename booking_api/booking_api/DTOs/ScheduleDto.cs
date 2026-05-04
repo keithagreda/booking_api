@@ -51,3 +51,15 @@ public record AdminBookingSummaryDto(
     DateTime EndTime,
     decimal TotalAmount
 );
+
+public record UpcomingEventDto(
+    Guid Id,
+    string RoomName,
+    string GameName,
+    RoomStatus Status,
+    DateTime StartTime,
+    DateTime EndTime,
+    string? Notes,
+    int? MatchSize,
+    decimal? SeatRate
+);

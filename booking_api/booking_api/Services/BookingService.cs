@@ -9,12 +9,14 @@ public class BookingService : IBookingService
 {
     private readonly AppDbContext _db;
     private readonly IS3Service _s3;
+    private readonly ITrustScoreService _trust;
     private const int HoldMinutes = 15;
 
-    public BookingService(AppDbContext db, IS3Service s3)
+    public BookingService(AppDbContext db, IS3Service s3, ITrustScoreService trust)
     {
         _db = db;
         _s3 = s3;
+        _trust = trust;
     }
 
     public async Task<BookingDto> CreateRegularAsync(Guid userId, CreateRegularBookingRequest request, CancellationToken ct = default)
@@ -121,6 +123,15 @@ public class BookingService : IBookingService
 
         booking.Status = BookingStatus.Cancelled;
         await _db.SaveChangesAsync(ct);
+
+        await _trust.AdjustAsync(
+            userId,
+            TrustAdjustmentReason.BookingCancelled,
+            -1f,
+            "Booking cancelled by user",
+            bookingId,
+            ct: ct);
+
         return await ToDtoAsync(booking, ct);
     }
 

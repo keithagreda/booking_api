@@ -27,6 +27,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<MatchPlayer> MatchPlayers => Set<MatchPlayer>();
     public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<TrustScoreHistory> TrustScoreHistory => Set<TrustScoreHistory>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -179,6 +180,27 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
             entity.Property(q => q.State).HasConversion<string>();
             entity.HasIndex(q => new { q.WindowId, q.State, q.EnqueuedAt });
+        });
+
+        modelBuilder.Entity<TrustScoreHistory>(entity =>
+        {
+            entity.HasOne(t => t.User)
+                .WithMany(u => u.TrustScoreHistory)
+                .HasForeignKey(t => t.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(t => t.TriggeredByUser)
+                .WithMany()
+                .HasForeignKey(t => t.TriggeredByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(t => t.Booking)
+                .WithMany()
+                .HasForeignKey(t => t.BookingId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.Property(t => t.Reason).HasConversion<string>();
+            entity.HasIndex(t => t.UserId);
         });
 
         // Apply global soft-delete filter to all entities inheriting BaseEntity

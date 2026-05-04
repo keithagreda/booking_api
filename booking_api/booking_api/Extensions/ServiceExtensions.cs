@@ -21,6 +21,9 @@ public static class ServiceExtensions
         services.Configure<S3Settings>(configuration.GetSection("S3"));
         services.AddSingleton<IS3Service, S3Service>();
 
+        services.Configure<SesSettings>(configuration.GetSection("Ses"));
+        services.AddSingleton<IEmailService, SesEmailService>();
+
         services.AddScoped<IAvailabilityService, AvailabilityService>();
         services.AddScoped<IBookingService, BookingService>();
         services.AddScoped<IPaymentService, PaymentService>();
@@ -29,6 +32,9 @@ public static class ServiceExtensions
         services.AddScoped<IDisplayService, DisplayService>();
         services.AddScoped<IAdminCatalogService, AdminCatalogService>();
         services.AddSingleton<ILiveBroadcaster, LiveBroadcaster>();
+
+        services.AddScoped<IAuthTokenGenerator, AuthService>();
+        services.AddScoped<ITrustScoreService, TrustScoreService>();
 
         services.AddHostedService<HoldExpiryWorker>();
 

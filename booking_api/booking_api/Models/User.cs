@@ -16,6 +16,10 @@ public class User : IdentityUser<Guid>
     public DateTime? BannedAt { get; set; }
     public Guid? BannedByUserId { get; set; }
 
+    // Trust / behavior score (0-100, default 50)
+    public float TrustScore { get; set; } = 50f;
+    public DateTime? LastTrustAdjustment { get; set; }
+
     // Audit fields (mirroring BaseEntity for non-Identity entities)
     public Guid? CreatorUserId { get; set; }
     public DateTime CreationTime { get; set; } = DateTime.UtcNow;
@@ -26,4 +30,5 @@ public class User : IdentityUser<Guid>
     public bool IsDeleted { get; set; }
 
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+    public ICollection<TrustScoreHistory> TrustScoreHistory { get; set; } = new List<TrustScoreHistory>();
 }

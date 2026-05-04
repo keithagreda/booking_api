@@ -108,6 +108,35 @@ public static class AdminScheduleEndpoints
             return Results.Ok(results);
         });
 
+        group.MapGet("/upcoming-events", async (AppDbContext db, int? hours, CancellationToken ct) =>
+        {
+            var lookahead = TimeSpan.FromHours(hours ?? 48);
+            var now = DateTime.UtcNow;
+            var future = now.Add(lookahead);
+
+            var events = await db.RoomStatusWindows
+                .Include(w => w.Room)
+                    .ThenInclude(r => r.Game)
+                .Where(w => !w.Room.IsDeleted
+                    && w.Status != RoomStatus.Open
+                    && w.EndTime > now
+                    && w.StartTime < future)
+                .OrderBy(w => w.StartTime)
+                .ToListAsync(ct);
+
+            return Results.Ok(events.Select(w => new UpcomingEventDto(
+                w.Id,
+                w.Room.Name,
+                w.Room.Game.Name,
+                w.Status,
+                w.StartTime,
+                w.EndTime,
+                w.Notes,
+                w.MatchSize,
+                w.SeatRate
+            )));
+        });
+
         return app;
     }
 }

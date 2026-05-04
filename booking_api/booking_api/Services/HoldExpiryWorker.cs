@@ -1,5 +1,6 @@
 using booking_api.Data;
 using booking_api.Models;
+using booking_api.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace booking_api.Services;
@@ -38,6 +39,7 @@ public class HoldExpiryWorker : BackgroundService
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var trust = scope.ServiceProvider.GetRequiredService<ITrustScoreService>();
         var now = DateTime.UtcNow;
 
         var stale = await db.Bookings
@@ -53,5 +55,16 @@ public class HoldExpiryWorker : BackgroundService
 
         await db.SaveChangesAsync(ct);
         _log.LogInformation("Expired {Count} stale booking holds", stale.Count);
+
+        foreach (var b in stale)
+        {
+            await trust.AdjustAsync(
+                b.BookedByUserId,
+                TrustAdjustmentReason.BookingExpired,
+                -2f,
+                "Booking hold expired without payment",
+                b.Id,
+                ct: ct);
+        }
     }
 }

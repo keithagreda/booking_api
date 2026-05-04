@@ -16,7 +16,12 @@ public interface IAuthService
     Task<UserDto> GetCurrentUserAsync(Guid userId);
 }
 
-public class AuthService : IAuthService
+public interface IAuthTokenGenerator
+{
+    string GenerateToken(User user);
+}
+
+public class AuthService : IAuthService, IAuthTokenGenerator
 {
     private readonly UserManager<User> _userManager;
     private readonly JwtSettings _jwt;
@@ -47,7 +52,7 @@ public class AuthService : IAuthService
             throw new InvalidOperationException(errors);
         }
 
-        var token = GenerateJwtToken(user);
+        var token = GenerateToken(user);
         return new AuthResponse(token, MapToDto(user));
     }
 
@@ -61,7 +66,7 @@ public class AuthService : IAuthService
         if (user.IsBanned)
             throw new UnauthorizedAccessException("This account has been banned.");
 
-        var token = GenerateJwtToken(user);
+        var token = GenerateToken(user);
         return new AuthResponse(token, MapToDto(user));
     }
 
@@ -73,7 +78,7 @@ public class AuthService : IAuthService
         return MapToDto(user);
     }
 
-    private string GenerateJwtToken(User user)
+    public string GenerateToken(User user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -97,5 +102,5 @@ public class AuthService : IAuthService
     }
 
     private static UserDto MapToDto(User user) =>
-        new(user.Id, user.Email!, user.FirstName, user.LastName, user.PhoneNumber, user.Role.ToString());
+        new(user.Id, user.Email!, user.FirstName, user.LastName, user.PhoneNumber, user.Role.ToString(), user.IsBanned, user.BannedAt, user.CreationTime, user.TrustScore);
 }
