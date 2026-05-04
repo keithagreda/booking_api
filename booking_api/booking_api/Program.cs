@@ -3,6 +3,7 @@ using booking_api.Data;
 using booking_api.Endpoints;
 using booking_api.Extensions;
 using booking_api.Hubs;
+using booking_api.Middleware;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +47,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AuditLogMiddleware>();
 
 app.MapAuthEndpoints();
 app.MapAdminEndpoints();
@@ -57,6 +59,7 @@ app.MapDisplayEndpoints();
 app.MapAdminMatchEndpoints();
 app.MapAdminCatalogEndpoints();
 app.MapAdminScheduleEndpoints();
+app.MapAuditLogEndpoints();
 app.MapHub<LiveHub>("/hubs/live");
 
 await DataSeeder.SeedAdminAsync(app.Services);

@@ -6,4 +6,7 @@ public record UserDto(
     string FirstName,
     string LastName,
     string? PhoneNumber,
-    string Role);
+    string Role,
+    bool IsBanned,
+    DateTime? BannedAt,
+    DateTime CreationTime);

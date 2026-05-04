@@ -26,6 +26,7 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
     public DbSet<Match> Matches => Set<Match>();
     public DbSet<MatchPlayer> MatchPlayers => Set<MatchPlayer>();
     public DbSet<QueueEntry> QueueEntries => Set<QueueEntry>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -192,6 +193,9 @@ public class AppDbContext : IdentityDbContext<User, IdentityRole<Guid>, Guid>
 
             method.Invoke(null, [modelBuilder]);
         }
+
+        // Remove soft-delete filter from AuditLog — we keep all records
+        modelBuilder.Entity<AuditLog>().HasQueryFilter(_ => true);
     }
 
     private static void ApplySoftDeleteFilter<T>(ModelBuilder modelBuilder) where T : BaseEntity
