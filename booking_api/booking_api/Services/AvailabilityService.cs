@@ -8,8 +8,13 @@ namespace booking_api.Services;
 public class AvailabilityService : IAvailabilityService
 {
     private readonly AppDbContext _db;
+    private readonly IS3Service _s3;
 
-    public AvailabilityService(AppDbContext db) => _db = db;
+    public AvailabilityService(AppDbContext db, IS3Service s3)
+    {
+        _db = db;
+        _s3 = s3;
+    }
 
     public async Task<AvailabilityResponse> GetAsync(Guid gameId, DateTime fromUtc, int days, CancellationToken ct = default)
     {
@@ -94,7 +99,7 @@ public class AvailabilityService : IAvailabilityService
             }
 
             roomDtos.Add(new RoomAvailabilityDto(
-                new RoomDto(room.Id, room.GameId, room.Name, room.Description, room.Capacity, room.HourlyRate),
+                await RoomMapper.ToDtoAsync(room, _s3, ct),
                 slots
             ));
         }

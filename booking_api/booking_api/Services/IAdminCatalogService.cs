@@ -11,6 +11,8 @@ public interface IAdminCatalogService
     Task<RoomDto> CreateRoomAsync(CreateRoomRequest request, CancellationToken ct = default);
     Task<RoomDto> UpdateRoomAsync(Guid id, UpdateRoomRequest request, CancellationToken ct = default);
     Task DeleteRoomAsync(Guid id, CancellationToken ct = default);
+    Task<RoomDto> SetRoomImageAsync(Guid id, Stream image, string contentType, CancellationToken ct = default);
+    Task<RoomDto> RemoveRoomImageAsync(Guid id, CancellationToken ct = default);
 
     Task<IReadOnlyList<RoomDto>> ListRoomsAsync(Guid? gameId, CancellationToken ct = default);
 

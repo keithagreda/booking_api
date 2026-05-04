@@ -8,8 +8,13 @@ namespace booking_api.Services;
 public class AdminCatalogService : IAdminCatalogService
 {
     private readonly AppDbContext _db;
+    private readonly IS3Service _s3;
 
-    public AdminCatalogService(AppDbContext db) => _db = db;
+    public AdminCatalogService(AppDbContext db, IS3Service s3)
+    {
+        _db = db;
+        _s3 = s3;
+    }
 
     // ── Games ───────────────────────────────────────────────
 
@@ -69,7 +74,7 @@ public class AdminCatalogService : IAdminCatalogService
         };
         _db.Rooms.Add(room);
         await _db.SaveChangesAsync(ct);
-        return ToDto(room);
+        return await ToDtoAsync(room, ct);
     }
 
     public async Task<RoomDto> UpdateRoomAsync(Guid id, UpdateRoomRequest request, CancellationToken ct = default)
@@ -82,7 +87,7 @@ public class AdminCatalogService : IAdminCatalogService
         room.Capacity = request.Capacity;
         room.HourlyRate = request.HourlyRate;
         await _db.SaveChangesAsync(ct);
-        return ToDto(room);
+        return await ToDtoAsync(room, ct);
     }
 
     public async Task DeleteRoomAsync(Guid id, CancellationToken ct = default)
@@ -104,12 +109,35 @@ public class AdminCatalogService : IAdminCatalogService
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<RoomDto> SetRoomImageAsync(Guid id, Stream image, string contentType, CancellationToken ct = default)
+    {
+        var room = await _db.Rooms.FirstOrDefaultAsync(r => r.Id == id, ct)
+            ?? throw new KeyNotFoundException("Room not found.");
+
+        var key = await _s3.UploadAsync(image, contentType, $"room-images/{room.Id}", ct);
+        room.ImageS3Key = key;
+        await _db.SaveChangesAsync(ct);
+        return await ToDtoAsync(room, ct);
+    }
+
+    public async Task<RoomDto> RemoveRoomImageAsync(Guid id, CancellationToken ct = default)
+    {
+        var room = await _db.Rooms.FirstOrDefaultAsync(r => r.Id == id, ct)
+            ?? throw new KeyNotFoundException("Room not found.");
+
+        room.ImageS3Key = null;
+        await _db.SaveChangesAsync(ct);
+        return await ToDtoAsync(room, ct);
+    }
+
     public async Task<IReadOnlyList<RoomDto>> ListRoomsAsync(Guid? gameId, CancellationToken ct = default)
     {
         var query = _db.Rooms.AsQueryable();
         if (gameId is not null) query = query.Where(r => r.GameId == gameId);
         var rooms = await query.OrderBy(r => r.Name).ToListAsync(ct);
-        return rooms.Select(ToDto).ToList();
+        var dtos = new List<RoomDto>(rooms.Count);
+        foreach (var r in rooms) dtos.Add(await ToDtoAsync(r, ct));
+        return dtos;
     }
 
     // ── Schedule windows ────────────────────────────────────
@@ -231,7 +259,7 @@ public class AdminCatalogService : IAdminCatalogService
     }
 
     private static GameDto ToDto(Game g) => new(g.Id, g.Name, g.Description, g.IconUrl);
-    private static RoomDto ToDto(Room r) => new(r.Id, r.GameId, r.Name, r.Description, r.Capacity, r.HourlyRate);
+    private Task<RoomDto> ToDtoAsync(Room r, CancellationToken ct = default) => RoomMapper.ToDtoAsync(r, _s3, ct);
     private static ScheduleWindowDto ToDto(RoomStatusWindow w) =>
         new(w.Id, w.RoomId, w.Status, w.StartTime, w.EndTime, w.Notes, w.SeatRate, w.MatchSize, w.QueueCap);
 }

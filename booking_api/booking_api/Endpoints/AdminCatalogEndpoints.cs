@@ -29,6 +29,26 @@ public static class AdminCatalogEndpoints
         group.MapDelete("/rooms/{id:guid}", async (Guid id, IAdminCatalogService svc) =>
             await Wrap(async () => { await svc.DeleteRoomAsync(id); return Results.NoContent(); }));
 
+        group.MapPost("/rooms/{id:guid}/image", async (Guid id, HttpRequest req, IAdminCatalogService svc) =>
+        {
+            if (!req.HasFormContentType)
+                return Results.BadRequest(new { error = "multipart/form-data required." });
+            var form = await req.ReadFormAsync();
+            var file = form.Files["image"] ?? form.Files.FirstOrDefault();
+            if (file is null || file.Length == 0)
+                return Results.BadRequest(new { error = "Image file is required." });
+
+            return await Wrap(async () =>
+            {
+                await using var stream = file.OpenReadStream();
+                var dto = await svc.SetRoomImageAsync(id, stream, file.ContentType);
+                return Results.Ok(dto);
+            });
+        }).DisableAntiforgery();
+
+        group.MapDelete("/rooms/{id:guid}/image", async (Guid id, IAdminCatalogService svc) =>
+            await Wrap(async () => Results.Ok(await svc.RemoveRoomImageAsync(id))));
+
         // Schedule windows
         group.MapGet("/rooms/{roomId:guid}/schedule",
             async (Guid roomId, DateTime? from, DateTime? to, IAdminCatalogService svc) =>

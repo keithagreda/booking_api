@@ -11,6 +11,8 @@ public class Room : BaseEntity
 
     public decimal HourlyRate { get; set; }
 
+    public string? ImageS3Key { get; set; }
+
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public ICollection<RoomStatusWindow> StatusWindows { get; set; } = new List<RoomStatusWindow>();
 }
