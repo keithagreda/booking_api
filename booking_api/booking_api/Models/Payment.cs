@@ -2,7 +2,9 @@ namespace booking_api.Models;
 
 public enum PaymentMethod
 {
-    GCash
+    GCash,
+    Cash,
+    OnlineBanking
 }
 
 public enum PaymentStatus
@@ -10,7 +12,8 @@ public enum PaymentStatus
     AwaitingProof,
     Submitted,
     Approved,
-    Rejected
+    Rejected,
+    Outstanding
 }
 
 public class Payment : BaseEntity
@@ -22,8 +25,9 @@ public class Payment : BaseEntity
     public PaymentStatus Status { get; set; } = PaymentStatus.AwaitingProof;
     public decimal Amount { get; set; }
 
-    public string? GcashReference { get; set; }
+    public string? ReferenceNumber { get; set; }
     public string? ProofS3Key { get; set; }
+    public string? Remarks { get; set; }
 
     public Guid? ReviewedByUserId { get; set; }
     public DateTime? ReviewedAt { get; set; }

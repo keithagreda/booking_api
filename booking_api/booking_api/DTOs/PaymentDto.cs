@@ -13,13 +13,16 @@ public record PaymentDto(
     PaymentMethod Method,
     PaymentStatus Status,
     decimal Amount,
-    string? GcashReference,
+    string? ReferenceNumber,
     string? ProofS3Key,
     string? ProofPresignedUrl,
+    string? Remarks,
     string? RejectionReason,
     DateTime? ReviewedAt
 );
 
-public record SubmitProofRequest(string? GcashReference);
+public record SubmitProofRequest(string? ReferenceNumber);
 
 public record RejectPaymentRequest(string Reason);
+
+public record SettlePaymentRequest(PaymentMethod Method, string? ReferenceNumber, string? Remarks);

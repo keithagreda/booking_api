@@ -163,9 +163,10 @@ public class BookingService : IBookingService
                 b.Payment.Method,
                 b.Payment.Status,
                 b.Payment.Amount,
-                b.Payment.GcashReference,
+                b.Payment.ReferenceNumber,
                 b.Payment.ProofS3Key,
                 presigned,
+                b.Payment.Remarks,
                 b.Payment.RejectionReason,
                 b.Payment.ReviewedAt
             );

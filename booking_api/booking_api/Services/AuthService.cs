@@ -102,5 +102,5 @@ public class AuthService : IAuthService, IAuthTokenGenerator
     }
 
     private static UserDto MapToDto(User user) =>
-        new(user.Id, user.Email!, user.FirstName, user.LastName, user.PhoneNumber, user.Role.ToString(), user.IsBanned, user.BannedAt, user.CreationTime, user.TrustScore);
+        new(user.Id, user.Email!, user.FirstName, user.LastName, user.PhoneNumber, user.Role.ToString(), user.IsBanned, user.BannedAt, user.CreationTime, user.TrustScore, user.OutstandingBalance, user.IsProvisional);
 }

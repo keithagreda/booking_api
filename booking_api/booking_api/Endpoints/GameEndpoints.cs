@@ -21,6 +21,20 @@ public static class GameEndpoints
         })
         .AllowAnonymous();
 
+        group.MapGet("/rooms", async (AppDbContext db, IS3Service s3) =>
+        {
+            var rooms = await db.Rooms
+                .Include(r => r.Game)
+                .Where(r => !r.IsDeleted)
+                .OrderBy(r => r.Game.Name)
+                .ThenBy(r => r.Name)
+                .ToListAsync();
+            var dtos = new List<RoomDto>(rooms.Count);
+            foreach (var r in rooms) dtos.Add(await RoomMapper.ToDtoAsync(r, s3));
+            return Results.Ok(dtos);
+        })
+        .AllowAnonymous();
+
         group.MapGet("/{id:guid}/rooms", async (Guid id, AppDbContext db, IS3Service s3) =>
         {
             var rooms = await db.Rooms

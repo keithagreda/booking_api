@@ -60,7 +60,9 @@ public static class AdminEndpoints
                     u.IsBanned,
                     u.BannedAt,
                     u.CreationTime,
-                    u.TrustScore
+                    u.TrustScore,
+                    u.OutstandingBalance,
+                    u.IsProvisional
                 ))
                 .ToListAsync(ct);
 
@@ -82,7 +84,9 @@ public static class AdminEndpoints
                 user.IsBanned,
                 user.BannedAt,
                 user.CreationTime,
-                user.TrustScore
+                user.TrustScore,
+                user.OutstandingBalance,
+                user.IsProvisional
             ));
         });
 
@@ -248,6 +252,34 @@ public static class AdminEndpoints
                 ct: ct);
 
             return Results.Ok(new { message = $"Trust score adjusted by {request.Adjustment:+0.0;-#.#;0}." });
+        });
+
+        group.MapPost("/users", async (UserManager<User> userManager,
+            ProvisionalUserRequest request,
+            CancellationToken ct) =>
+        {
+            var existing = await userManager.FindByEmailAsync(request.Email);
+            if (existing is not null)
+                return Results.Conflict(new { error = "A user with this email already exists." });
+
+            var tempPassword = $"Temp_{Guid.CreateVersion7().ToString("N")[..8]}!";
+
+            var user = new User
+            {
+                UserName = request.Email,
+                Email = request.Email,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                PhoneNumber = request.PhoneNumber,
+                Role = Role.Player,
+                IsProvisional = true
+            };
+
+            var result = await userManager.CreateAsync(user, tempPassword);
+            if (!result.Succeeded)
+                return Results.BadRequest(new { errors = result.Errors.Select(e => e.Description) });
+
+            return Results.Created($"/api/admin/users/{user.Id}", new { user.Id, user.Email, user.IsProvisional });
         });
 
         return app;

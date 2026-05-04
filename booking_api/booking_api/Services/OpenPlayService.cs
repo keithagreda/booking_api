@@ -119,7 +119,7 @@ public class OpenPlayService : IOpenPlayService
             b.Id, b.RoomId, "", b.BookedByUserId, b.Type, b.Status,
             b.StartTime, b.EndTime, b.TotalAmount, b.HoldExpiresAt, b.Notes,
             new PaymentDto(p.Id, p.BookingId, null, null, null, null, null, p.Method, p.Status, p.Amount,
-                p.GcashReference, p.ProofS3Key, null, p.RejectionReason, p.ReviewedAt)
+                p.ReferenceNumber, p.ProofS3Key, null, p.Remarks, p.RejectionReason, p.ReviewedAt)
         );
     }
 

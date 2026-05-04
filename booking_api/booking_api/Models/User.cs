@@ -20,6 +20,12 @@ public class User : IdentityUser<Guid>
     public float TrustScore { get; set; } = 50f;
     public DateTime? LastTrustAdjustment { get; set; }
 
+    // Outstanding balance (unpaid bookings + POS tabs)
+    public decimal OutstandingBalance { get; set; }
+
+    // Provisional flag — admin-created placeholder until user self-registers
+    public bool IsProvisional { get; set; }
+
     // Audit fields (mirroring BaseEntity for non-Identity entities)
     public Guid? CreatorUserId { get; set; }
     public DateTime CreationTime { get; set; } = DateTime.UtcNow;

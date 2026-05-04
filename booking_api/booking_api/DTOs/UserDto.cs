@@ -10,4 +10,6 @@ public record UserDto(
     bool IsBanned,
     DateTime? BannedAt,
     DateTime CreationTime,
-    float TrustScore);
+    float TrustScore,
+    decimal OutstandingBalance,
+    bool IsProvisional);

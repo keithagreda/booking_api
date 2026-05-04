@@ -20,7 +20,7 @@ public class PaymentService : IPaymentService
         _trust = trust;
     }
 
-    public async Task<PaymentDto> SubmitProofAsync(Guid bookingId, Guid userId, Stream proofStream, string contentType, string? gcashReference, CancellationToken ct = default)
+    public async Task<PaymentDto> SubmitProofAsync(Guid bookingId, Guid userId, Stream proofStream, string contentType, string? referenceNumber, CancellationToken ct = default)
     {
         var booking = await _db.Bookings
             .Include(b => b.Payment)
@@ -46,7 +46,7 @@ public class PaymentService : IPaymentService
         var key = await _s3.UploadAsync(proofStream, contentType, $"payment-proofs/{booking.Id}", ct);
 
         booking.Payment.ProofS3Key = key;
-        booking.Payment.GcashReference = gcashReference;
+        booking.Payment.ReferenceNumber = referenceNumber;
         booking.Payment.Status = PaymentStatus.Submitted;
         booking.Status = BookingStatus.ProofSubmitted;
 
@@ -162,8 +162,45 @@ public class PaymentService : IPaymentService
             p.Booking.Room.Name,
             p.Booking.StartTime, p.Booking.EndTime,
             p.Method, p.Status, p.Amount,
-            p.GcashReference, p.ProofS3Key, presigned,
+            p.ReferenceNumber, p.ProofS3Key, presigned,
+            p.Remarks,
             p.RejectionReason, p.ReviewedAt
         );
+    }
+
+    public async Task<PaymentDto> SettleOutstandingAsync(Guid paymentId, PaymentMethod method, string? referenceNumber, string? remarks, Guid settledByUserId, CancellationToken ct = default)
+    {
+        var payment = await _db.Payments
+            .Include(p => p.Booking)
+            .FirstOrDefaultAsync(p => p.Id == paymentId, ct)
+            ?? throw new KeyNotFoundException("Payment not found.");
+
+        if (payment.Status != PaymentStatus.Outstanding)
+            throw new InvalidOperationException($"Cannot settle a payment in status {payment.Status}.");
+
+        payment.Method = method;
+        payment.ReferenceNumber = referenceNumber;
+        payment.Remarks = remarks;
+        payment.Status = PaymentStatus.Approved;
+        payment.ReviewedByUserId = settledByUserId;
+        payment.ReviewedAt = DateTime.UtcNow;
+        payment.Booking.HoldExpiresAt = null;
+
+        payment.Booking.BookedByUser.OutstandingBalance -= payment.Amount;
+        if (payment.Booking.BookedByUser.OutstandingBalance < 0)
+            payment.Booking.BookedByUser.OutstandingBalance = 0;
+
+        await _db.SaveChangesAsync(ct);
+
+        await _trust.AdjustAsync(
+            payment.Booking.BookedByUserId,
+            TrustAdjustmentReason.BookingCompleted,
+            1f,
+            "Outstanding payment settled",
+            payment.BookingId,
+            settledByUserId,
+            ct);
+
+        return await BuildDtoAsync(payment, ct);
     }
 }

@@ -59,13 +59,14 @@ public static class BookingEndpoints
             if (file is null || file.Length == 0)
                 return Results.BadRequest(new { error = "Proof file is required." });
 
-            var gcashReference = form["gcashReference"].ToString();
+            var referenceNumber = form["referenceNumber"].ToString()
+                ?? form["gcashReference"].ToString();
 
             try
             {
                 var userId = http.User.GetUserId();
                 await using var stream = file.OpenReadStream();
-                var payment = await svc.SubmitProofAsync(id, userId, stream, file.ContentType, string.IsNullOrWhiteSpace(gcashReference) ? null : gcashReference);
+                var payment = await svc.SubmitProofAsync(id, userId, stream, file.ContentType, string.IsNullOrWhiteSpace(referenceNumber) ? null : referenceNumber);
                 return Results.Ok(payment);
             }
             catch (KeyNotFoundException ex) { return Results.NotFound(new { error = ex.Message }); }

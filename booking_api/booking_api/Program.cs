@@ -51,6 +51,7 @@ app.UseMiddleware<AuditLogMiddleware>();
 
 app.MapAuthEndpoints();
 app.MapAdminEndpoints();
+app.MapAdminBookingEndpoints();
 app.MapGameEndpoints();
 app.MapBookingEndpoints();
 app.MapAdminPaymentEndpoints();
