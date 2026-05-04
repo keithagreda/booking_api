@@ -5,6 +5,11 @@ namespace booking_api.DTOs;
 public record PaymentDto(
     Guid Id,
     Guid BookingId,
+    string? BookerName,
+    string? BookerEmail,
+    string? RoomName,
+    DateTime? BookingStartTime,
+    DateTime? BookingEndTime,
     PaymentMethod Method,
     PaymentStatus Status,
     decimal Amount,

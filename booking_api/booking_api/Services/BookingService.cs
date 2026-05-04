@@ -141,9 +141,14 @@ public class BookingService : IBookingService
                 catch { presigned = null; }
             }
 
+            var booker = b.BookedByUser;
             paymentDto = new PaymentDto(
                 b.Payment.Id,
                 b.Payment.BookingId,
+                booker != null ? $"{booker.FirstName} {booker.LastName}" : null,
+                booker?.Email,
+                b.Room?.Name,
+                b.StartTime, b.EndTime,
                 b.Payment.Method,
                 b.Payment.Status,
                 b.Payment.Amount,

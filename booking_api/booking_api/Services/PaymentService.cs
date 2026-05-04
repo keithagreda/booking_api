@@ -56,6 +56,10 @@ public class PaymentService : IPaymentService
     public async Task<IReadOnlyList<PaymentDto>> ListForReviewAsync(CancellationToken ct = default)
     {
         var pending = await _db.Payments
+            .Include(p => p.Booking)
+                .ThenInclude(b => b.Room)
+            .Include(p => p.Booking)
+                .ThenInclude(b => b.BookedByUser)
             .Where(p => p.Status == PaymentStatus.Submitted)
             .OrderBy(p => p.CreationTime)
             .ToListAsync(ct);
@@ -94,6 +98,7 @@ public class PaymentService : IPaymentService
     {
         var payment = await _db.Payments
             .Include(p => p.Booking)
+                .ThenInclude(b => b.Room)
             .FirstOrDefaultAsync(p => p.Id == paymentId, ct)
             ?? throw new KeyNotFoundException("Payment not found.");
 
@@ -119,8 +124,23 @@ public class PaymentService : IPaymentService
             catch { presigned = null; }
         }
 
+        await _db.Entry(p.Booking)
+            .Reference(b => b.Room)
+            .LoadAsync(ct);
+
+        await _db.Entry(p.Booking)
+            .Reference(b => b.BookedByUser)
+            .LoadAsync(ct);
+
+        var booker = p.Booking.BookedByUser;
+
         return new PaymentDto(
-            p.Id, p.BookingId, p.Method, p.Status, p.Amount,
+            p.Id, p.BookingId,
+            booker != null ? $"{booker.FirstName} {booker.LastName}" : null,
+            booker?.Email,
+            p.Booking.Room.Name,
+            p.Booking.StartTime, p.Booking.EndTime,
+            p.Method, p.Status, p.Amount,
             p.GcashReference, p.ProofS3Key, presigned,
             p.RejectionReason, p.ReviewedAt
         );

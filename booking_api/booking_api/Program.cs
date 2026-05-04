@@ -56,6 +56,7 @@ app.MapOpenPlayEndpoints();
 app.MapDisplayEndpoints();
 app.MapAdminMatchEndpoints();
 app.MapAdminCatalogEndpoints();
+app.MapAdminScheduleEndpoints();
 app.MapHub<LiveHub>("/hubs/live");
 
 await DataSeeder.SeedAdminAsync(app.Services);
